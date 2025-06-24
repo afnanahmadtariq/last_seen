@@ -18,6 +18,8 @@ interface CheckResult {
   uptime?: {
     percentage: number
     trend: number[]
+    totalChecks: number
+    successfulChecks: number
   }
   error?: string
 }
@@ -118,7 +120,7 @@ export default function LastSeenPing() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">🛰️ LastSeenPing</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">Check if a website is alive and maintained</p>
+          <p className="text-lg text-gray-600 dark:text-gray-300">Real-time website monitoring with uptime tracking and SSL certificate information</p>
         </div>
 
         {/* Input Section */}
@@ -128,7 +130,7 @@ export default function LastSeenPing() {
               <Globe className="h-5 w-5" />
               Website Checker
             </CardTitle>
-            <CardDescription>Enter a website URL to check its status and maintenance information</CardDescription>
+            <CardDescription>Enter a website URL to check its real-time status, SSL certificate, and uptime history</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex gap-2">
@@ -249,9 +251,19 @@ export default function LastSeenPing() {
                       )}
                     </>
                   ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      SSL certificate information not available
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {result.url.startsWith('https://') 
+                          ? "SSL certificate information could not be retrieved" 
+                          : "SSL certificate not applicable for HTTP sites"
+                        }
+                      </p>
+                      {result.url.startsWith('https://') && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          The site may be using a CDN or have SSL information protected
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -262,36 +274,53 @@ export default function LastSeenPing() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
-                  Uptime Trend (30 days)
+                  Uptime History (30 days)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {result.uptime ? (
                     <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Uptime</span>
-                        <Badge variant={result.uptime.percentage > 95 ? "default" : "secondary"}>
-                          {result.uptime.percentage.toFixed(1)}%
-                        </Badge>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Uptime</span>
+                          <Badge variant={result.uptime.percentage > 95 ? "default" : result.uptime.percentage > 90 ? "secondary" : "destructive"}>
+                            {result.uptime.percentage.toFixed(1)}%
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Checks</span>
+                          <span className="text-sm">{result.uptime.successfulChecks}/{result.uptime.totalChecks}</span>
+                        </div>
                       </div>
                       <div className="space-y-2">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">Recent trend</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Daily trend (30 days)</span>
                         <div className="flex gap-1 h-8 items-end">
-                          {result.uptime.trend.map((value, index) => (
+                          {result.uptime.trend.map((value: number, index: number) => (
                             <div
                               key={index}
-                              className="flex-1 bg-blue-200 dark:bg-blue-800 rounded-sm"
-                              style={{ height: `${Math.max(value * 100, 10)}%` }}
+                              className={`flex-1 rounded-sm ${
+                                value > 0.95 ? 'bg-green-400 dark:bg-green-600' :
+                                value > 0.8 ? 'bg-yellow-400 dark:bg-yellow-600' :
+                                value > 0 ? 'bg-red-400 dark:bg-red-600' :
+                                'bg-gray-200 dark:bg-gray-700'
+                              }`}
+                              style={{ height: `${Math.max(value * 100, 5)}%` }}
+                              title={`Day ${index + 1}: ${(value * 100).toFixed(1)}% uptime`}
                             />
                           ))}
                         </div>
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Uptime data simulated - integrate with monitoring service for real data
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No historical data available yet
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Uptime tracking starts with your first check. Check this URL multiple times to build history.
+                      </p>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -301,7 +330,7 @@ export default function LastSeenPing() {
 
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>Enter any website URL to check its current status and maintenance information</p>
+          <p>Real uptime tracking builds history over time. Check URLs regularly to see detailed trends.</p>
         </div>
       </div>
     </div>

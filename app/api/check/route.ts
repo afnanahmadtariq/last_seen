@@ -1,4 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
+import sslChecker from "ssl-checker"
+import { recordUptime, getUptimeStats, shouldRecordUptime } from "@/lib/uptime-tracker"
 
 interface CheckResult {
   url: string
@@ -11,6 +13,8 @@ interface CheckResult {
   uptime?: {
     percentage: number
     trend: number[]
+    totalChecks: number
+    successfulChecks: number
   }
   error?: string
 }
@@ -51,27 +55,37 @@ export async function GET(request: NextRequest) {
       responseTime,
     }
 
+    // Record uptime data
+    if (shouldRecordUptime(parsedUrl.toString())) {
+      await recordUptime(parsedUrl.toString(), result.status, responseTime)
+    }
+
+    // Get uptime statistics
+    const uptimeStats = await getUptimeStats(parsedUrl.toString())
+    if (uptimeStats) {
+      result.uptime = uptimeStats
+    }
+
     // Get last-modified header
     const lastModified = response.headers.get("last-modified")
     if (lastModified) {
       result.lastModified = lastModified
     }
 
-    // Simulate SSL certificate check (in production, you'd use a proper SSL checker)
+    // Get real SSL certificate information for HTTPS sites
     if (parsedUrl.protocol === "https:") {
-      // Simulate SSL expiry date (30-90 days from now)
-      const daysFromNow = Math.floor(Math.random() * 60) + 30
-      const expiryDate = new Date()
-      expiryDate.setDate(expiryDate.getDate() + daysFromNow)
-
-      result.sslExpiry = expiryDate.toISOString()
-      result.sslDaysRemaining = daysFromNow
-    }
-
-    // Simulate uptime data (in production, integrate with monitoring service)
-    result.uptime = {
-      percentage: Math.random() * 5 + 95, // 95-100% uptime
-      trend: Array.from({ length: 30 }, () => Math.random() * 0.3 + 0.7), // 30 days of trend data
+      try {
+        const hostname = parsedUrl.hostname
+        const sslInfo = await sslChecker(hostname)
+        
+        if (sslInfo && sslInfo.valid) {
+          result.sslExpiry = sslInfo.validTo
+          result.sslDaysRemaining = sslInfo.daysRemaining
+        }
+      } catch (sslError) {
+        console.warn(`SSL check failed for ${parsedUrl.hostname}:`, sslError)
+        // SSL info will remain undefined if check fails
+      }
     }
 
     return NextResponse.json(result)
@@ -88,6 +102,16 @@ export async function GET(request: NextRequest) {
       } else if (error.message.includes("Invalid URL")) {
         errorMessage = "Invalid URL format"
       }
+    }
+
+    // Record offline status for uptime tracking
+    try {
+      const parsedUrl = new URL(url)
+      if (shouldRecordUptime(parsedUrl.toString())) {
+        await recordUptime(parsedUrl.toString(), 'offline')
+      }
+    } catch {
+      // Ignore errors in uptime recording during error handling
     }
 
     return NextResponse.json(
