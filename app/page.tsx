@@ -121,6 +121,15 @@ export default function LastSeenPing() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">🛰️ LastSeenPing</h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">Real-time website monitoring with uptime tracking and SSL certificate information</p>
+          <div className="mt-4">
+            <Button 
+              onClick={() => window.location.href = '/profiles'} 
+              variant="outline"
+              className="gap-2"
+            >
+              📊 View All Profiles
+            </Button>
+          </div>
         </div>
 
         {/* Input Section */}

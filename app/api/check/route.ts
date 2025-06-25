@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import sslChecker from "ssl-checker"
 import { recordUptime, getUptimeStats, shouldRecordUptime } from "@/lib/uptime-tracker"
+import { WebsiteProfiler } from "@/lib/website-profiler"
 
 interface CheckResult {
   url: string
@@ -33,12 +34,12 @@ export async function GET(request: NextRequest) {
 
     const startTime = Date.now()
 
-    // Make the request with timeout
+    // Make the request with timeout and get full response for metadata extraction
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
     const response = await fetch(url, {
-      method: "HEAD", // Use HEAD to avoid downloading full content
+      method: "GET", // Use GET to get full content for metadata extraction
       signal: controller.signal,
       headers: {
         "User-Agent": "LastSeenPing/1.0 (Website Status Checker)",
@@ -48,6 +49,16 @@ export async function GET(request: NextRequest) {
     clearTimeout(timeoutId)
     const responseTime = Date.now() - startTime
 
+    // Get response text for metadata extraction (only for successful responses)
+    let htmlContent = ''
+    if (response.ok && response.headers.get('content-type')?.includes('text/html')) {
+      try {
+        htmlContent = await response.text()
+      } catch (err) {
+        console.warn('Failed to read response text:', err)
+      }
+    }
+
     const result: CheckResult = {
       url: parsedUrl.toString(),
       status: response.ok ? "online" : "offline",
@@ -55,13 +66,68 @@ export async function GET(request: NextRequest) {
       responseTime,
     }
 
-    // Record uptime data
+    // Extract metadata from HTML content
+    let metadata
+    if (htmlContent) {
+      try {
+        metadata = await WebsiteProfiler.extractMetadataFromHtml(htmlContent, parsedUrl.toString())
+      } catch (err) {
+        console.warn('Failed to extract metadata:', err)
+      }
+    }
+
+    // Get SSL information
+    let sslInfo
+    if (parsedUrl.protocol === "https:") {
+      try {
+        const hostname = parsedUrl.hostname
+        const sslData = await sslChecker(hostname)
+        
+        if (sslData && sslData.valid) {
+          result.sslExpiry = sslData.validTo
+          result.sslDaysRemaining = sslData.daysRemaining
+          
+          sslInfo = {
+            valid: sslData.valid,
+            expiry: sslData.validTo,
+            daysRemaining: sslData.daysRemaining,
+          }
+        }
+      } catch (sslError) {
+        console.warn(`SSL check failed for ${parsedUrl.hostname}:`, sslError)
+      }
+    }
+
+    // Record to MongoDB profiling system
+    try {
+      await WebsiteProfiler.createOrUpdateProfile(parsedUrl.toString(), metadata)
+      await WebsiteProfiler.recordCheck({
+        url: parsedUrl.toString(),
+        status: result.status,
+        statusCode: result.statusCode,
+        responseTime,
+        lastModified: response.headers.get("last-modified") || undefined,
+        sslInfo,
+      })
+    } catch (dbError) {
+      console.warn('Failed to record to MongoDB:', dbError)
+      // Continue with file-based system as fallback
+    }
+
+    // Record uptime data (keep file-based system as backup)
     if (shouldRecordUptime(parsedUrl.toString())) {
       await recordUptime(parsedUrl.toString(), result.status, responseTime)
     }
 
-    // Get uptime statistics
-    const uptimeStats = await getUptimeStats(parsedUrl.toString())
+    // Get uptime statistics (try MongoDB first, fallback to file-based)
+    let uptimeStats
+    try {
+      uptimeStats = await WebsiteProfiler.getUptimeStats(parsedUrl.toString())
+    } catch (dbError) {
+      console.warn('Failed to get MongoDB uptime stats, using file-based:', dbError)
+      uptimeStats = await getUptimeStats(parsedUrl.toString())
+    }
+    
     if (uptimeStats) {
       result.uptime = uptimeStats
     }
@@ -70,22 +136,6 @@ export async function GET(request: NextRequest) {
     const lastModified = response.headers.get("last-modified")
     if (lastModified) {
       result.lastModified = lastModified
-    }
-
-    // Get real SSL certificate information for HTTPS sites
-    if (parsedUrl.protocol === "https:") {
-      try {
-        const hostname = parsedUrl.hostname
-        const sslInfo = await sslChecker(hostname)
-        
-        if (sslInfo && sslInfo.valid) {
-          result.sslExpiry = sslInfo.validTo
-          result.sslDaysRemaining = sslInfo.daysRemaining
-        }
-      } catch (sslError) {
-        console.warn(`SSL check failed for ${parsedUrl.hostname}:`, sslError)
-        // SSL info will remain undefined if check fails
-      }
     }
 
     return NextResponse.json(result)
@@ -107,6 +157,19 @@ export async function GET(request: NextRequest) {
     // Record offline status for uptime tracking
     try {
       const parsedUrl = new URL(url)
+      
+      // Record to MongoDB profiling system
+      try {
+        await WebsiteProfiler.recordCheck({
+          url: parsedUrl.toString(),
+          status: 'offline',
+          error: errorMessage,
+        })
+      } catch (dbError) {
+        console.warn('Failed to record offline status to MongoDB:', dbError)
+      }
+      
+      // File-based fallback
       if (shouldRecordUptime(parsedUrl.toString())) {
         await recordUptime(parsedUrl.toString(), 'offline')
       }
