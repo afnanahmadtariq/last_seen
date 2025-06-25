@@ -96,6 +96,6 @@ The app is optimized for deployment on Vercel:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## �‍♂️ Support
+## 💬 Support
 
 If you have any questions or need help, feel free to open an issue or reach out!
