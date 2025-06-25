@@ -1,4 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import sslChecker from "ssl-checker"
 import { recordUptime, getUptimeStats, shouldRecordUptime } from "@/lib/uptime-tracker"
 import { WebsiteProfiler } from "@/lib/website-profiler"
@@ -21,6 +23,15 @@ interface CheckResult {
 }
 
 export async function GET(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    )
+  }
+
   const searchParams = request.nextUrl.searchParams
   const url = searchParams.get("url")
 
@@ -100,7 +111,7 @@ export async function GET(request: NextRequest) {
 
     // Record to MongoDB profiling system
     try {
-      await WebsiteProfiler.createOrUpdateProfile(parsedUrl.toString(), metadata)
+      await WebsiteProfiler.createOrUpdateProfile(parsedUrl.toString(), session.user.id, metadata)
       await WebsiteProfiler.recordCheck({
         url: parsedUrl.toString(),
         status: result.status,
@@ -108,7 +119,7 @@ export async function GET(request: NextRequest) {
         responseTime,
         lastModified: response.headers.get("last-modified") || undefined,
         sslInfo,
-      })
+      }, session.user.id)
     } catch (dbError) {
       console.warn('Failed to record to MongoDB:', dbError)
       // Continue with file-based system as fallback
@@ -122,7 +133,7 @@ export async function GET(request: NextRequest) {
     // Get uptime statistics (try MongoDB first, fallback to file-based)
     let uptimeStats
     try {
-      uptimeStats = await WebsiteProfiler.getUptimeStats(parsedUrl.toString())
+      uptimeStats = await WebsiteProfiler.getUptimeStats(parsedUrl.toString(), session.user.id)
     } catch (dbError) {
       console.warn('Failed to get MongoDB uptime stats, using file-based:', dbError)
       uptimeStats = await getUptimeStats(parsedUrl.toString())
@@ -164,7 +175,7 @@ export async function GET(request: NextRequest) {
           url: parsedUrl.toString(),
           status: 'offline',
           error: errorMessage,
-        })
+        }, session.user.id)
       } catch (dbError) {
         console.warn('Failed to record offline status to MongoDB:', dbError)
       }

@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Globe, Shield, Clock, TrendingUp, AlertCircle, CheckCircle, XCircle } from "lucide-react"
+import { Loader2, Globe, Shield, Clock, TrendingUp, AlertCircle, CheckCircle, XCircle, User, LogOut } from "lucide-react"
 
 interface CheckResult {
   url: string
@@ -25,10 +27,33 @@ interface CheckResult {
 }
 
 export default function LastSeenPing() {
+  const { data: session, status } = useSession()
+  const router = useRouter()
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CheckResult | null>(null)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (status === "loading") return // Still loading
+    
+    if (!session) {
+      router.push("/auth/signin")
+      return
+    }
+  }, [session, status, router])
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!session) {
+    return null // Will redirect to signin
+  }
 
   const validateUrl = (url: string): boolean => {
     try {
@@ -116,10 +141,38 @@ export default function LastSeenPing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Header */}
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Globe className="h-8 w-8 text-blue-600 mr-2" />
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">LastSeenPing</h1>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-gray-500" />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {session.user?.name || session.user?.email}
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
+        {/* Hero Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">🛰️ LastSeenPing</h1>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Website Monitoring Dashboard</h2>
           <p className="text-lg text-gray-600 dark:text-gray-300">Real-time website monitoring with uptime tracking and SSL certificate information</p>
           <div className="mt-4">
             <Button 

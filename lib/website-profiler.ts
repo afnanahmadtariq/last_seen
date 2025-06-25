@@ -26,18 +26,18 @@ interface CheckResult {
 }
 
 export class WebsiteProfiler {
-  
-  static async createOrUpdateProfile(url: string, metadata?: WebsiteMetadata) {
+    static async createOrUpdateProfile(url: string, userId: string, metadata?: WebsiteMetadata) {
     await connectToDatabase()
     
     const domain = new URL(url).hostname
     
-    let profile = await WebsiteProfile.findOne({ url })
+    let profile = await WebsiteProfile.findOne({ url, userId })
     
     if (!profile) {
       profile = new WebsiteProfile({
         url,
         domain,
+        userId,
         title: metadata?.title,
         description: metadata?.description,
         favicon: metadata?.favicon,
@@ -64,15 +64,14 @@ export class WebsiteProfiler {
     await profile.save()
     return profile
   }
-  
-  static async recordCheck(checkResult: CheckResult) {
+    static async recordCheck(checkResult: CheckResult, userId: string) {
     await connectToDatabase()
     
     // Get or create website profile
-    const profile = await this.createOrUpdateProfile(checkResult.url)
-    
-    // Record check history
+    const profile = await this.createOrUpdateProfile(checkResult.url, userId)
+      // Record check history
     const checkHistory = new CheckHistory({
+      userId: userId,
       websiteId: profile._id,
       url: checkResult.url,
       status: checkResult.status,
@@ -87,18 +86,17 @@ export class WebsiteProfiler {
     })
     
     await checkHistory.save()
-    
-    // Update analytics
-    await this.updateAnalytics(profile._id, checkResult)
+      // Update analytics
+    await this.updateAnalytics(profile._id, checkResult, userId)
     
     return checkHistory
   }
   
-  static async updateAnalytics(websiteId: string, checkResult: CheckResult) {
+  static async updateAnalytics(websiteId: string, checkResult: CheckResult, userId: string) {
     let analytics = await WebsiteAnalytics.findOne({ websiteId })
-    
-    if (!analytics) {
+      if (!analytics) {
       analytics = new WebsiteAnalytics({
+        userId: userId,
         websiteId,
         url: checkResult.url,
         totalChecks: 0,
@@ -155,11 +153,10 @@ export class WebsiteProfiler {
     await analytics.save()
     return analytics
   }
-  
-  static async getWebsiteProfile(url: string) {
+    static async getWebsiteProfile(url: string, userId: string) {
     await connectToDatabase()
     
-    const profile = await WebsiteProfile.findOne({ url })
+    const profile = await WebsiteProfile.findOne({ url, userId })
     if (!profile) return null
     
     const analytics = await WebsiteAnalytics.findOne({ websiteId: profile._id })
@@ -196,10 +193,31 @@ export class WebsiteProfiler {
     return profilesWithAnalytics
   }
   
-  static async getUptimeStats(url: string, days = 30) {
+  static async getUserProfiles(userId: string, limit = 50, offset = 0) {
     await connectToDatabase()
     
-    const profile = await WebsiteProfile.findOne({ url })
+    const profiles = await WebsiteProfile.find({ userId, isActive: true })
+      .sort({ lastChecked: -1 })
+      .skip(offset)
+      .limit(limit)
+      .lean()
+    
+    const profilesWithAnalytics = await Promise.all(
+      profiles.map(async (profile) => {
+        const analytics = await WebsiteAnalytics.findOne({ websiteId: profile._id }).lean()
+        return {
+          ...profile,
+          analytics,
+        }
+      })
+    )
+    
+    return profilesWithAnalytics
+  }
+    static async getUptimeStats(url: string, userId: string, days = 30) {
+    await connectToDatabase()
+    
+    const profile = await WebsiteProfile.findOne({ url, userId })
     if (!profile) return null
     
     const startDate = new Date()

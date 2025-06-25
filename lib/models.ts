@@ -2,10 +2,14 @@ import mongoose from 'mongoose'
 
 // Website Profile Schema
 const websiteProfileSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   url: {
     type: String,
     required: true,
-    unique: true,
   },
   domain: {
     type: String,
@@ -40,6 +44,11 @@ const websiteProfileSchema = new mongoose.Schema({
 
 // Check History Schema
 const checkHistorySchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   websiteId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'WebsiteProfile',
@@ -72,6 +81,11 @@ const checkHistorySchema = new mongoose.Schema({
 
 // Performance Metrics Schema
 const performanceMetricsSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   websiteId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'WebsiteProfile',
@@ -111,6 +125,11 @@ const performanceMetricsSchema = new mongoose.Schema({
 
 // Website Analytics Schema
 const websiteAnalyticsSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   websiteId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'WebsiteProfile',
@@ -160,20 +179,22 @@ const websiteAnalyticsSchema = new mongoose.Schema({
 })
 
 // Create indexes for better performance
-// Note: url index is automatically created by unique: true
-websiteProfileSchema.index({ domain: 1 })
-websiteProfileSchema.index({ lastChecked: 1 })
-websiteProfileSchema.index({ isActive: 1 })
+// Note: url index per user for uniqueness
+websiteProfileSchema.index({ userId: 1, url: 1 }, { unique: true })
+websiteProfileSchema.index({ userId: 1, domain: 1 })
+websiteProfileSchema.index({ userId: 1, lastChecked: 1 })
+websiteProfileSchema.index({ userId: 1, isActive: 1 })
 
-checkHistorySchema.index({ websiteId: 1, checkTime: -1 })
-checkHistorySchema.index({ url: 1, checkTime: -1 })
-checkHistorySchema.index({ checkTime: -1 })
+checkHistorySchema.index({ userId: 1, websiteId: 1, checkTime: -1 })
+checkHistorySchema.index({ userId: 1, url: 1, checkTime: -1 })
+checkHistorySchema.index({ userId: 1, checkTime: -1 })
 
-performanceMetricsSchema.index({ websiteId: 1, period: 1, date: -1 })
-performanceMetricsSchema.index({ date: -1 })
+performanceMetricsSchema.index({ userId: 1, websiteId: 1, period: 1, date: -1 })
+performanceMetricsSchema.index({ userId: 1, date: -1 })
 
-websiteAnalyticsSchema.index({ websiteId: 1 })
-// Note: url index is automatically created by unique: true constraint
+websiteAnalyticsSchema.index({ userId: 1, websiteId: 1 }, { unique: true })
+// Note: url index per user for uniqueness
+websiteAnalyticsSchema.index({ userId: 1, url: 1 }, { unique: true })
 
 // Export models
 export const WebsiteProfile = mongoose.models.WebsiteProfile || mongoose.model('WebsiteProfile', websiteProfileSchema)
