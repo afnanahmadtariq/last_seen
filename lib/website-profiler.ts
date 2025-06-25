@@ -305,4 +305,29 @@ export class WebsiteProfiler {
     
     return metadata
   }
+  
+  static async deleteProfile(url: string, userId: string) {
+    await connectToDatabase()
+    
+    // Find the profile to delete
+    const profile = await WebsiteProfile.findOne({ url, userId })
+    if (!profile) {
+      throw new Error('Website profile not found')
+    }
+    
+    // Delete related records
+    await Promise.all([
+      // Delete check history
+      CheckHistory.deleteMany({ websiteId: profile._id }),
+      // Delete analytics
+      WebsiteAnalytics.deleteMany({ websiteId: profile._id }),
+      // Delete performance metrics if any
+      PerformanceMetrics.deleteMany({ websiteId: profile._id }),
+    ])
+    
+    // Delete the profile itself
+    await WebsiteProfile.deleteOne({ _id: profile._id })
+    
+    return { success: true, deletedProfile: profile }
+  }
 }

@@ -34,3 +34,46 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    )
+  }
+
+  try {
+    const { url } = await request.json()
+    
+    if (!url) {
+      return NextResponse.json(
+        { error: "URL is required" },
+        { status: 400 }
+      )
+    }
+
+    const result = await WebsiteProfiler.deleteProfile(url, session.user.id)
+    
+    return NextResponse.json({
+      message: "Website profile deleted successfully",
+      ...result
+    })
+  } catch (error) {
+    console.error("Error deleting profile:", error)
+    
+    if (error instanceof Error && error.message === 'Website profile not found') {
+      return NextResponse.json(
+        { error: "Website profile not found" },
+        { status: 404 }
+      )
+    }
+    
+    return NextResponse.json(
+      { error: "Failed to delete website profile" },
+      { status: 500 }
+    )
+  }
+}

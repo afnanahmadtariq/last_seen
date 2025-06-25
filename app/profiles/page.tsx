@@ -8,7 +8,19 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Globe, Shield, Clock, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, ExternalLink, User, LogOut, Loader2 } from "lucide-react"
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { Globe, Shield, Clock, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, ExternalLink, User, LogOut, Loader2, Trash2 } from "lucide-react"
 
 interface WebsiteProfile {
   _id: string
@@ -36,10 +48,12 @@ interface WebsiteProfile {
 export default function ProfilesPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { toast } = useToast()
   const [profiles, setProfiles] = useState<WebsiteProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTab, setSelectedTab] = useState("all")
+  const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === "loading") return // Still loading
@@ -78,6 +92,51 @@ export default function ProfilesPage() {
       console.error('Failed to load profiles:', error)
     } finally {
       setLoading(false)
+    }
+  }
+  const deleteProfile = async (url: string) => {
+    try {
+      setDeletingProfile(url)
+      
+      const response = await fetch('/api/profiles', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+      })
+      
+      if (response.status === 401) {
+        router.push("/auth/signin")
+        return
+      }
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to delete profile')
+      }
+      
+      // Remove the profile from the local state
+      setProfiles(profiles.filter(profile => profile.url !== url))
+      
+      // Show success message
+      toast({
+        title: "Profile deleted",
+        description: `Successfully deleted profile for ${url}`,
+        variant: "default",
+      })
+      
+    } catch (error) {
+      console.error('Failed to delete profile:', error)
+      
+      // Show error message
+      toast({
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Failed to delete website profile",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingProfile(null)
     }
   }
 
@@ -308,13 +367,63 @@ export default function ProfilesPage() {
                               </div>
                             )}
                           </>
-                        )}
-
-                        <div className="pt-2 border-t">
+                        )}                        <div className="pt-2 border-t">
                           <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
                             <span>Last checked</span>
                             <span>{formatDate(profile.lastChecked)}</span>
                           </div>
+                        </div>
+
+                        {/* Delete Button */}
+                        <div className="pt-2 border-t">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+                                disabled={deletingProfile === profile.url}
+                              >
+                                {deletingProfile === profile.url ? (
+                                  <>
+                                    <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                                    Deleting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Trash2 className="h-3 w-3 mr-2" />
+                                    Delete Profile
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Website Profile</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete the profile for <strong>{profile.url}</strong>?
+                                  <br /><br />
+                                  This will permanently remove:
+                                  <ul className="list-disc list-inside mt-2 space-y-1">
+                                    <li>All check history</li>
+                                    <li>Performance analytics</li>
+                                    <li>Uptime statistics</li>
+                                  </ul>
+                                  <br />
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteProfile(profile.url)}
+                                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                                >
+                                  Delete Profile
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
                     </CardContent>
