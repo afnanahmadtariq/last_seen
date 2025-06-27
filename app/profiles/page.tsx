@@ -20,6 +20,8 @@ import {
   AlertDialogTrigger 
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { FullPageLoading } from "@/components/ui/loading"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { Globe, Shield, Clock, TrendingUp, AlertCircle, CheckCircle, XCircle, Search, ExternalLink, User, LogOut, Loader2, Trash2 } from "lucide-react"
 
 interface WebsiteProfile {
@@ -67,11 +69,7 @@ export default function ProfilesPage() {
   }, [session, status, router])
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
+    return <FullPageLoading text="Authenticating..." subText="Verifying your access" />
   }
 
   if (!session) {
@@ -193,43 +191,47 @@ export default function ProfilesPage() {
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Loading Website Profiles...</h1>
-          </div>
-        </div>
-      </div>
-    )
+    return <FullPageLoading text="Loading Website Profiles..." subText="Fetching your monitored websites" />
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       {/* Header */}
-      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+      <header className="sticky top-0 z-50 glass dark:glass-dark border-b border-white/20 dark:border-gray-800/50">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Globe className="h-8 w-8 text-blue-600 mr-2" />
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">LastSeenPing</h1>
+            <div className="flex items-center animate-fade-in">
+              <div className="relative">
+                <Globe className="h-8 w-8 text-blue-600 dark:text-blue-400 mr-3" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse-soft"></div>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                  LastSeenPing
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Website profiles</p>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 animate-fade-in">
+              <ThemeToggle />
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={() => router.push("/")}
+                className="bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/50 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200"
               >
-                Dashboard
+                🏠 Dashboard
               </Button>
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-white/20 dark:border-gray-700/50">
+                <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
                   {session.user?.name || session.user?.email}
                 </span>
-              </div>              <Button
+              </div>
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={() => signOut({ callbackUrl: "/auth/signin" })}
+                className="bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/50 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
@@ -239,15 +241,22 @@ export default function ProfilesPage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-12 max-w-7xl">
         {/* Hero Section */}
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">📊 Website Profiles</h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300">Monitor and analyze website performance across all tracked sites</p>
+        <div className="text-center mb-12 animate-slide-up">
+          <div className="relative inline-block mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent mb-4">
+              📊 Website Profiles
+            </h2>
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
+          </div>
+          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Monitor and analyze website performance across all tracked sites
+          </p>
         </div>
 
         {/* Search and Filters */}
-        <Card className="mb-6">
+        <Card className="mb-8 glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl animate-scale-in">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4 items-center">
               <div className="relative flex-1">
@@ -256,10 +265,14 @@ export default function ProfilesPage() {
                   placeholder="Search websites by URL, domain, or title..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-12 bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
-              <Button onClick={loadProfiles} variant="outline">
+              <Button 
+                onClick={loadProfiles} 
+                variant="outline"
+                className="bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/50 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200"
+              >
                 Refresh
               </Button>
             </div>

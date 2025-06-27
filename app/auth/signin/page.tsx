@@ -102,52 +102,59 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4">
-            <Globe className="h-8 w-8 text-blue-600 mr-2" />
-            <span className="text-2xl font-bold text-gray-900">LastSeenPing</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 py-12 px-4 sm:px-6 lg:px-8">
+      <Card className="w-full max-w-md glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-2xl animate-slide-up">
+        <CardHeader className="text-center pb-4">
+          <div className="flex items-center justify-center mb-6">
+            <div className="relative">
+              <Globe className="h-12 w-12 text-blue-600 dark:text-blue-400" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse-soft"></div>
+            </div>
           </div>
-          <CardTitle>Welcome</CardTitle>
-          <CardDescription>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2">
+            LastSeenPing
+          </h1>
+          <CardTitle className="text-xl mb-2">Welcome</CardTitle>
+          <CardDescription className="text-base">
             Sign in to your account or create a new one to start monitoring your websites
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="register">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-white/50 dark:bg-gray-800/50 border border-white/20 dark:border-gray-700/50">
+              <TabsTrigger value="login" className="data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-200">Sign In</TabsTrigger>
+              <TabsTrigger value="register" className="data-[state=active]:bg-white data-[state=active]:shadow-lg transition-all duration-200">Sign Up</TabsTrigger>
             </TabsList>
 
             {error && (
-              <Alert className="mt-4" variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert className="mt-4 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border border-red-200 dark:border-red-800 animate-fade-in" variant="destructive">
+                <AlertDescription className="font-medium">{error}</AlertDescription>
               </Alert>
             )}
 
             <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-6 mt-6">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
+                  <Label htmlFor="login-email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</Label>
                   <Input
                     id="login-email"
                     type="email"
                     placeholder="Enter your email"
                     value={loginData.email}
                     onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                    className="h-12 bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                  <Label htmlFor="login-password" className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</Label>
                   <Input
                     id="login-password"
                     type="password"
                     placeholder="Enter your password"
                     value={loginData.password}
                     onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    className="h-12 bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
