@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FullPageLoading } from "@/components/ui/loading"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { WebsiteResultsModal } from "@/components/ui/website-results-modal"
+import { QuickResultsPreview } from "@/components/ui/quick-results-preview"
 import { Loader2, Globe, Shield, Clock, TrendingUp, AlertCircle, CheckCircle, XCircle, User, LogOut } from "lucide-react"
 
 interface CheckResult {
@@ -31,10 +34,12 @@ interface CheckResult {
 export default function LastSeenPing() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { toast } = useToast()
   const [url, setUrl] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CheckResult | null>(null)
   const [error, setError] = useState("")
+  const [showResultsModal, setShowResultsModal] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return // Still loading
@@ -85,6 +90,7 @@ export default function LastSeenPing() {
     setLoading(true)
     setError("")
     setResult(null)
+    setShowResultsModal(false)
 
     try {
       const response = await fetch(`/api/check?url=${encodeURIComponent(formattedUrl)}`)
@@ -95,46 +101,20 @@ export default function LastSeenPing() {
       }
 
       setResult(data)
+      // Don't auto-open modal, show preview first
+      // setShowResultsModal(true)
+      
+      // Show success toast
+      toast({
+        title: "Website checked successfully!",
+        description: `${formattedUrl} is ${data.status}`,
+        variant: data.status === "online" ? "default" : "destructive",
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
     } finally {
       setLoading(false)
     }
-  }
-
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return "No data available"
-
-    try {
-      const date = new Date(dateString)
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    } catch {
-      return "Invalid date"
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "online":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "offline":
-        return <XCircle className="h-4 w-4 text-red-500" />
-      default:
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />
-    }
-  }
-
-  const getSSLBadgeVariant = (daysRemaining?: number) => {
-    if (!daysRemaining) return "secondary"
-    if (daysRemaining < 7) return "destructive"
-    if (daysRemaining < 30) return "default"
-    return "secondary"
   }
 
   return (
@@ -205,13 +185,18 @@ export default function LastSeenPing() {
         </div>
 
         {/* Input Section */}
-        <Card className="mb-8 animate-scale-in glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl">
+        <Card className={`mb-8 animate-scale-in glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl ${result ? 'ring-2 ring-blue-500/20' : ''}`}>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-xl">
               <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg">
                 <Globe className="h-5 w-5 text-white" />
               </div>
               Website Checker
+              {result && (
+                <Badge variant="outline" className="ml-auto">
+                  Last checked: {new URL(result.url).hostname}
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription className="text-base text-gray-600 dark:text-gray-300">
               Enter a website URL to check its real-time status, SSL certificate, and uptime history
@@ -258,196 +243,29 @@ export default function LastSeenPing() {
           </CardContent>
         </Card>
 
-        {/* Results Section */}
+        {/* Quick Results Preview */}
+        {result && !showResultsModal && (
+          <QuickResultsPreview 
+            result={result}
+            onViewDetails={() => setShowResultsModal(true)}
+            onCheckAnother={() => {
+              setResult(null)
+              setUrl("")
+            }}
+          />
+        )}
+
+        {/* Results Modal */}
         {result && (
-          <div className="grid gap-6 md:grid-cols-2 animate-slide-up">
-            {/* Server Status Card */}
-            <Card className="glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  <div className={`p-2 rounded-lg ${result.status === "online" ? "bg-green-100 dark:bg-green-900/30" : "bg-red-100 dark:bg-red-900/30"}`}>
-                    {getStatusIcon(result.status)}
-                  </div>
-                  Server Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Status</span>
-                    <Badge 
-                      variant={result.status === "online" ? "default" : "destructive"}
-                      className={`${result.status === "online" ? "shadow-glow-green" : "shadow-glow-red"} font-medium`}
-                    >
-                      {result.status === "online" ? "Online" : "Offline"}
-                    </Badge>
-                  </div>
-                  {result.statusCode && (
-                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">HTTP Status</span>
-                      <span className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">{result.statusCode}</span>
-                    </div>
-                  )}
-                  {result.responseTime && (
-                    <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Response Time</span>
-                      <span className="font-mono text-sm font-bold text-green-600 dark:text-green-400">{result.responseTime}ms</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Last Modified Card */}
-            <Card className="glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  Last Content Update
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-                      {result.lastModified ? "Last modified" : "Status"}
-                    </p>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {result.lastModified ? formatDate(result.lastModified) : "No data available"}
-                    </p>
-                    {!result.lastModified && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        Site may not provide last-modified headers
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* SSL Certificate Card */}
-            <Card className="glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  SSL Certificate
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {result.sslExpiry ? (
-                    <>
-                      <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Expires</span>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatDate(result.sslExpiry)}</span>
-                      </div>
-                      {result.sslDaysRemaining !== undefined && (
-                        <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Days remaining</span>
-                          <Badge 
-                            variant={getSSLBadgeVariant(result.sslDaysRemaining)}
-                            className={`font-medium ${
-                              result.sslDaysRemaining < 7 ? "shadow-glow-red" :
-                              result.sslDaysRemaining < 30 ? "shadow-glow" :
-                              "shadow-glow-green"
-                            }`}
-                          >
-                            {result.sslDaysRemaining} days
-                          </Badge>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg border border-yellow-200/50 dark:border-yellow-800/50">
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                        {result.url.startsWith('https://') 
-                          ? "SSL certificate information could not be retrieved" 
-                          : "SSL certificate not applicable for HTTP sites"
-                        }
-                      </p>
-                      {result.url.startsWith('https://') && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          The site may be using a CDN or have SSL information protected
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Uptime Trend Card */}
-            <Card className="glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl hover:shadow-2xl transition-all duration-300 group">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                    <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  Uptime History (30 days)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {result.uptime ? (
-                    <>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Uptime</span>
-                          <Badge 
-                            variant={result.uptime.percentage > 95 ? "default" : result.uptime.percentage > 90 ? "secondary" : "destructive"}
-                            className={`font-medium ${
-                              result.uptime.percentage > 95 ? "shadow-glow-green" :
-                              result.uptime.percentage > 90 ? "shadow-glow" :
-                              "shadow-glow-red"
-                            }`}
-                          >
-                            {result.uptime.percentage.toFixed(1)}%
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-white/50 dark:bg-gray-800/50 rounded-lg">
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Checks</span>
-                          <span className="text-sm font-bold text-gray-900 dark:text-white">{result.uptime.successfulChecks}/{result.uptime.totalChecks}</span>
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily trend (30 days)</span>
-                        <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800/50 dark:to-blue-900/20 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-                          <div className="flex gap-1 h-12 items-end">
-                            {result.uptime.trend.map((value: number, index: number) => (
-                              <div
-                                key={index}
-                                className={`flex-1 rounded-sm transition-all duration-300 hover:scale-110 ${
-                                  value > 0.95 ? 'bg-gradient-to-t from-green-400 to-green-500 dark:from-green-600 dark:to-green-500' :
-                                  value > 0.8 ? 'bg-gradient-to-t from-yellow-400 to-yellow-500 dark:from-yellow-600 dark:to-yellow-500' :
-                                  value > 0 ? 'bg-gradient-to-t from-red-400 to-red-500 dark:from-red-600 dark:to-red-500' :
-                                  'bg-gradient-to-t from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600'
-                                }`}
-                                style={{ height: `${Math.max(value * 100, 8)}%` }}
-                                title={`Day ${index + 1}: ${(value * 100).toFixed(1)}% uptime`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 dark:from-gray-800/50 dark:to-blue-900/20 rounded-lg border border-gray-200/50 dark:border-gray-700/50">
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 font-medium">
-                        No historical data available yet
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Uptime tracking starts with your first check. Check this URL multiple times to build history.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <WebsiteResultsModal 
+            result={result}
+            isOpen={showResultsModal}
+            onClose={() => {
+              setShowResultsModal(false)
+              // Optionally clear the result after closing
+              // setResult(null)
+            }}
+          />
         )}
 
         {/* Footer */}
