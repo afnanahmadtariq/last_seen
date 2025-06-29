@@ -6,10 +6,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
       - MONGODB_URI=mongodb://mongodb:27017/lastseenping
       - NEXTAUTH_URL=http://localhost:3000
-      - NEXTAUTH_SECRET=your-super-secret-key-change-this-in-production
+      - NEXTAUTH_SECRET=G5+1mMbYwjhH9t6P7Zx9eHj+qdcMoyex8O+L03t7ow4=
     depends_on:
       - mongodb
     networks:
