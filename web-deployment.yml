@@ -15,8 +15,9 @@ spec:
       containers:
       - name: last-seen-web
         image: last-seen-web:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 3000
         env:
-        - name: MONGO_URI
+        - name: MONGODB_URI
           value: "mongodb://mongodb-service:27017/last_seen"
