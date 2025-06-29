@@ -8,13 +8,8 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-ARG MONGODB_URI
-ARG NEXTAUTH_URL
-ARG NEXTAUTH_SECRET
-
-ENV MONGODB_URI=$MONGODB_URI
-ENV NEXTAUTH_URL=$NEXTAUTH_URL
-ENV NEXTAUTH_SECRET=$NEXTAUTH_SECRET
+# Set a dummy MONGODB_URI for build time (no actual DB connection needed)
+ENV MONGODB_URI=mongodb://localhost:27017/build-dummy
 
 RUN npm run build
 
