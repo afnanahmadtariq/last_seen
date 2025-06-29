@@ -2,7 +2,13 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MONGODB_URI: mongodb://mongodb:27017/lastseenping
+        NEXTAUTH_URL: http://localhost:3000
+        NEXTAUTH_SECRET: G5+1mMbYwjhH9t6P7Zx9eHj+qdcMoyex8O+L03t7ow4=
     ports:
       - "3000:3000"
     environment:
