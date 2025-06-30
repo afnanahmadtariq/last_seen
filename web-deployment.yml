@@ -16,6 +16,13 @@ spec:
       - name: last-seen-web
         image: last-seen-web:latest
         imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+          limits:
+            cpu: "1000m"
+            memory: "512Mi"
         ports:
         - containerPort: 3000
         env:
