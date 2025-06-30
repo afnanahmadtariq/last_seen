@@ -21,3 +21,11 @@ spec:
         env:
         - name: MONGODB_URI
           value: "mongodb://mongodb-service:27017/last_seen"
+        - name: NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: NEXTAUTH_URL
+          value: "http://$(NODE_IP):31000"
+        - name: NEXTAUTH_SECRET
+          value: "G5+1mMbYwjhH9t6P7Zx9eHj+qdcMoyex8O+L03t7ow4="
