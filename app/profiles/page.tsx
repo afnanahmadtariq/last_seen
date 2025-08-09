@@ -58,7 +58,7 @@ export default function ProfilesPage() {
   const [deletingProfile, setDeletingProfile] = useState<string | null>(null)
 
   useEffect(() => {
-    if (status === "loading") return // Still loading
+    if (status === "loading") return 
     
     if (!session) {
       router.push("/auth/signin")
@@ -114,10 +114,8 @@ export default function ProfilesPage() {
         throw new Error(error.error || 'Failed to delete profile')
       }
       
-      // Remove the profile from the local state
       setProfiles(profiles.filter(profile => profile.url !== url))
       
-      // Show success message
       toast({
         title: "Profile deleted",
         description: `Successfully deleted profile for ${url}`,
@@ -127,7 +125,6 @@ export default function ProfilesPage() {
     } catch (error) {
       console.error('Failed to delete profile:', error)
       
-      // Show error message
       toast({
         title: "Delete failed",
         description: error instanceof Error ? error.message : "Failed to delete website profile",
@@ -220,7 +217,6 @@ export default function ProfilesPage() {
           </CardContent>
         </Card>
 
-        {/* Tabs for filtering */}
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-6 ">
           <TabsList className="grid w-full grid-cols-4 bg-gray-200/80 dark:bg-gray-800/60">
             <TabsTrigger value="all">
@@ -285,7 +281,6 @@ export default function ProfilesPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {/* Status and Uptime */}
                         <div className="flex justify-between items-center">
                           <span className="text-xs text-gray-600 dark:text-gray-400">Status</span>
                           <Badge variant={profile.analytics?.lastStatus === "online" ? "default" : "destructive"}>
@@ -330,7 +325,6 @@ export default function ProfilesPage() {
                           </div>
                         </div>
 
-                        {/* Delete Button */}
                         <div className="pt-2 border-t">
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -392,7 +386,6 @@ export default function ProfilesPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Back to Main */}
         <div className="text-center mt-8 ">
           <Button onClick={() => window.location.href = '/'} variant="outline" className="bg-white/20 dark:bg-gray-800/60">
             ← Back to Website Checker

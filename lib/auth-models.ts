@@ -1,6 +1,5 @@
 import mongoose from 'mongoose'
 
-// User Schema for Authentication
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -27,5 +26,4 @@ const userSchema = new mongoose.Schema({
   timestamps: true,
 })
 
-// Export models
 export const User = mongoose.models.User || mongoose.model('User', userSchema)

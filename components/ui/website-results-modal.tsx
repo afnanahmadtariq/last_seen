@@ -4,12 +4,9 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { 
-  Globe, 
   Shield, 
   Clock, 
   TrendingUp, 
@@ -18,7 +15,6 @@ import {
   AlertCircle, 
   ExternalLink,
   Copy,
-  Download,
   Share,
   X
 } from "lucide-react"
@@ -49,7 +45,6 @@ interface WebsiteResultsModalProps {
 export function WebsiteResultsModal({ result, isOpen, onClose }: WebsiteResultsModalProps) {
   const [copiedUrl, setCopiedUrl] = useState(false)
 
-  // Add keyboard support
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
@@ -157,7 +152,6 @@ export function WebsiteResultsModal({ result, isOpen, onClose }: WebsiteResultsM
 
         <ScrollArea className="max-h-[calc(90vh-120px)]">
           <div className="space-y-6">
-            {/* Website Header */}
             <Card className="glass dark:glass-dark border-white/20 dark:border-gray-800/50">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -204,7 +198,6 @@ export function WebsiteResultsModal({ result, isOpen, onClose }: WebsiteResultsM
 
             {/* Status Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Server Status */}
               <Card className="glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-3 text-lg">
