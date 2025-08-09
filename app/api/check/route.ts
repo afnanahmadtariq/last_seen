@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Record to MongoDB profiling system
+    // Record to MongoDB profiling system and uptime
     try {
       await WebsiteProfiler.createOrUpdateProfile(parsedUrl.toString(), session.user.id, metadata)
       await WebsiteProfiler.recordCheck({
@@ -122,22 +122,19 @@ export async function GET(request: NextRequest) {
       }, session.user.id)
     } catch (dbError) {
       console.warn('Failed to record to MongoDB:', dbError)
-      // Continue with file-based system as fallback
     }
 
-    // Record uptime data (keep file-based system as backup)
+    // Record uptime data (Mongo only)
     if (shouldRecordUptime(parsedUrl.toString())) {
-      await recordUptime(parsedUrl.toString(), result.status, responseTime)
+      await recordUptime(parsedUrl.toString(), result.status, responseTime, session.user.id, {
+        lastModified: response.headers.get("last-modified") || undefined,
+        sslInfo,
+      })
     }
 
-    // Get uptime statistics (try MongoDB first, fallback to file-based)
+    // Get uptime statistics (Mongo only)
     let uptimeStats
-    try {
-      uptimeStats = await WebsiteProfiler.getUptimeStats(parsedUrl.toString(), session.user.id)
-    } catch (dbError) {
-      console.warn('Failed to get MongoDB uptime stats, using file-based:', dbError)
-      uptimeStats = await getUptimeStats(parsedUrl.toString())
-    }
+    uptimeStats = await getUptimeStats(parsedUrl.toString(), session.user.id)
     
     if (uptimeStats) {
       result.uptime = uptimeStats
@@ -180,9 +177,9 @@ export async function GET(request: NextRequest) {
         console.warn('Failed to record offline status to MongoDB:', dbError)
       }
       
-      // File-based fallback
+      // Uptime record (Mongo only)
       if (shouldRecordUptime(parsedUrl.toString())) {
-        await recordUptime(parsedUrl.toString(), 'offline')
+        await recordUptime(parsedUrl.toString(), 'offline', undefined, session.user.id)
       }
     } catch {
       // Ignore errors in uptime recording during error handling
