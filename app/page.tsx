@@ -13,6 +13,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { WebsiteResultsModal } from "@/components/ui/website-results-modal"
 import { QuickResultsPreview } from "@/components/ui/quick-results-preview"
 import { Loader2, Globe, Shield, Clock, TrendingUp, AlertCircle, CheckCircle, XCircle, User, LogOut } from "lucide-react"
+import Navbar from "@/components/navbar"
 
 interface CheckResult {
   url: string
@@ -119,73 +120,10 @@ export default function LastSeenPing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass dark:glass-dark border-b border-white/20 dark:border-gray-800/50">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center animate-fade-in">
-              <div className="relative">
-                <Globe className="h-8 w-8 text-blue-600 dark:text-blue-400 mr-3" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse-soft"></div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                  LastSeenPing
-                </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Real-time monitoring</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 animate-fade-in">
-              <ThemeToggle />
-              <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-white/50 dark:bg-gray-800/50 border border-white/20 dark:border-gray-700/50">
-                <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
-                  {session.user?.name || session.user?.email}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                className="bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/50 hover:bg-white/80 dark:hover:bg-gray-800/80 transition-all duration-200"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar showProfilesButton={true} />
 
       <div className="container mx-auto px-4 py-12 max-w-6xl">
-        {/* Hero Section */}
-        <div className="text-center mb-12 animate-slide-up">
-          <div className="relative inline-block mb-6">
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent mb-4">
-              Website Monitoring Dashboard
-            </h2>
-            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
-          </div>
-          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8">
-            Real-time website monitoring with uptime tracking, SSL certificate validation, and performance analytics
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button 
-              onClick={() => window.location.href = '/profiles'} 
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              size="lg"
-            >
-              📊 View All Profiles
-            </Button>
-            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              Live monitoring active
-            </div>
-          </div>
-        </div>
-
-        {/* Input Section */}
-        <Card className={`mb-8 animate-scale-in glass dark:glass-dark border-white/20 dark:border-gray-800/50 shadow-xl ${result ? 'ring-2 ring-blue-500/20' : ''}`}>
+        <Card className={`mb-8 animate-scale-in glass dark:glass-dark border-gray-300/50 dark:border-gray-800/50 shadow-xl ${result ? 'ring-2 ring-blue-500/20' : ''}`}>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-3 text-xl">
               <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg">
@@ -210,7 +148,7 @@ export default function LastSeenPing() {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleCheck()}
-                className="flex-1 h-12 text-lg bg-white/50 dark:bg-gray-800/50 border-white/20 dark:border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="flex-1 h-12 text-lg bg-white/50 dark:bg-gray-800/50 border-gray-300/50 dark:border-gray-700/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 disabled={loading}
               />
               <Button 
@@ -270,7 +208,7 @@ export default function LastSeenPing() {
 
         {/* Footer */}
         <div className="mt-16 text-center animate-fade-in">
-          <div className="p-6 glass dark:glass-dark rounded-xl border-white/20 dark:border-gray-800/50 shadow-lg">
+          <div className="p-6 glass dark:glass-dark rounded-xl border-gray-300/50 dark:border-gray-800/50 shadow-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">
               Real uptime tracking builds history over time
             </p>
