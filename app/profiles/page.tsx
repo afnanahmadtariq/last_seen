@@ -358,11 +358,13 @@ export default function ProfilesPage() {
                                   Are you sure you want to delete the profile for <strong>{profile.url}</strong>?
                                   <br /><br />
                                   This will permanently remove:
-                                  <ul className="list-disc list-inside mt-2 space-y-1">
-                                    <li>All check history</li>
-                                    <li>Performance analytics</li>
-                                    <li>Uptime statistics</li>
-                                  </ul>
+                                  <div className="mt-2 space-y-1">
+                                    <ul className="list-disc list-inside">
+                                      <li>All check history</li>
+                                      <li>Performance analytics</li>
+                                      <li>Uptime statistics</li>
+                                    </ul>
+                                  </div>
                                   <br />
                                   This action cannot be undone.
                                 </AlertDialogDescription>
