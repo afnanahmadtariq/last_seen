@@ -73,7 +73,7 @@ export default function ProfilesPage() {
   }
 
   if (!session) {
-    return null // Will redirect to signin
+    return null 
   }
   const loadProfiles = async () => {
     try {
@@ -221,9 +221,11 @@ export default function ProfilesPage() {
         </Card>
 
         {/* Tabs for filtering */}
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="all">All Sites ({profiles.length})</TabsTrigger>
+        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="mb-6 ">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-200/80 dark:bg-gray-800/60">
+            <TabsTrigger value="all">
+              All Sites ({profiles.length})
+            </TabsTrigger>
             <TabsTrigger value="online">
               Online ({profiles.filter(p => p.analytics?.lastStatus === "online").length})
             </TabsTrigger>
@@ -237,9 +239,9 @@ export default function ProfilesPage() {
 
           <TabsContent value={selectedTab} className="mt-6">
             {filteredProfiles.length === 0 ? (
-              <Card>
+              <Card className="bg-white/20 dark:bg-gray-800/60">
                 <CardContent className="pt-6 text-center">
-                  <p className="text-gray-500 dark:text-gray-400">
+                  <p className="text-gray-500 dark:text-gray-400 ">
                     {searchTerm ? "No websites match your search criteria." : "No websites tracked yet. Start by checking some URLs!"}
                   </p>
                 </CardContent>
@@ -247,7 +249,7 @@ export default function ProfilesPage() {
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {filteredProfiles.map((profile) => (
-                  <Card key={profile._id} className="hover:shadow-lg transition-shadow">
+                  <Card key={profile._id} className="hover:shadow-lg transition-shadow bg-white/20 dark:bg-gray-800/60">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -391,8 +393,8 @@ export default function ProfilesPage() {
         </Tabs>
 
         {/* Back to Main */}
-        <div className="text-center mt-8">
-          <Button onClick={() => window.location.href = '/'} variant="outline">
+        <div className="text-center mt-8 ">
+          <Button onClick={() => window.location.href = '/'} variant="outline" className="bg-white/20 dark:bg-gray-800/60">
             ← Back to Website Checker
           </Button>
         </div>
